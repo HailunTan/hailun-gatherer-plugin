@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+    <Appenders>
+        <Console name="Console">
+            <PatternLayout pattern="%d [%p|%c|%C{1}] %X{collection} %m%n" />
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="warn">
+            <AppenderRef ref="Console" />
+        </Root>
+        <!-- By default when tests run print debug or higher log messages. -->
+        <Logger name="com.example.plugin.hailungathererplugin" level="debug"/>
+    </Loggers>
+</Configuration>

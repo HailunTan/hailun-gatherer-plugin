@@ -1,0 +1,186 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example.plugin</groupId>
+    <artifactId>hailun-gatherer-plugin</artifactId>
+    <packaging>jar</packaging>
+    <version>1.1.4</version>
+    <name>Funnelback plugin</name>
+    <properties>
+        <version.log4j2>2.17.1</version.log4j2>
+        <version.junit>4.12</version.junit>
+        <version.mockito>2.21.0</version.mockito>
+        <version.funnelback-shared>16.13.2234-SNAPSHOT</version.funnelback-shared>
+    </properties>
+    <dependencies>
+        <dependency>
+            <artifactId>funnelback-shared</artifactId>
+            <groupId>com.funnelback</groupId>
+            <version>${version.funnelback-shared}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <artifactId>funnelback-shared-test</artifactId>
+            <groupId>com.funnelback</groupId>
+            <version>${version.funnelback-shared}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${version.log4j2}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${version.junit}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${version.mockito}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- add your dependencies here -->
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <release>11</release>
+                </configuration>
+            </plugin>
+            <!-- copy the non provided non test libs into the libs directory -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.1.2</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>target/${project.version}/libs</outputDirectory>
+                            <excludeScope>provided</excludeScope>
+                            <includeScope>runtime</includeScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <outputDirectory>target/${project.version}/libs</outputDirectory>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-readme</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                
+                                <mkdir dir="target/${project.version}" />
+                                <mkdir dir="target/${project.version}/docs" />
+                                <copy todir="target/${project.version}/docs" overwrite="true">
+                                    <fileset dir="docs" />
+                                </copy>
+                                <copy tofile="target/${project.version}/docs/README.md" overwrite="true">
+                                    <fileset file="README.md" />
+                                </copy>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    
+    <profiles>
+      <!-- run "mvn clean install -Pinstall-local" to install into a local funnelback installation -->
+        <profile>
+            <id>install-local</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>install-to-local-fb</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <fail message="Environment variable SEARCH_HOME must be set." unless="env.SEARCH_HOME"/>
+                                        
+                                        <echo message="Installing plugin into '${env.SEARCH_HOME}'" />
+
+                                        <mkdir dir="${env.SEARCH_HOME}/share/plugins" />
+                                        <mkdir dir="${env.SEARCH_HOME}/share/plugins/${project.artifactId}" />
+                                        <mkdir dir="${env.SEARCH_HOME}/share/plugins/${project.artifactId}/${project.version}" />
+                                        
+                                        <delete>
+                                            <fileset dir="${env.SEARCH_HOME}/share/plugins/${project.artifactId}/${project.version}" includes="**/*" />
+                                        </delete>
+
+                                        <copy todir="${env.SEARCH_HOME}/share/plugins/${project.artifactId}/${project.version}" overwrite="true">
+                                            <fileset dir="target/${project.version}" />
+                                        </copy>
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>install-remote-rsync</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>install-to-local-fb</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <fail message="Environment variable SEARCH_HOME_REMOTE must be set to the full path of SEARCH_HOME on the remote host." unless="env.SEARCH_HOME_REMOTE"/>
+                                        <fail message="Environment variable SEARCH_USER_AND_HOST must be set to the user and hostname of the remote host in the form user@host" unless="env.SEARCH_USER_AND_HOST"/>
+                                        
+                                        <exec executable="rsync">
+                                            <arg value="-avz"/>
+                                            <arg value="target/${project.version}"/>
+                                            <arg value="${env.SEARCH_USER_AND_HOST}:${env.SEARCH_HOME_REMOTE}/share/plugins/${project.artifactId}/"/>
+                                        </exec>
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>
