@@ -12,6 +12,9 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ * The custom gatherer class to test the getConfigSetting(...)
+ */
 public class HailunGathererPluginPluginGatherer implements PluginGatherer {
 
     private static final Logger log = LogManager.getLogger(HailunGathererPluginPluginGatherer.class);
@@ -26,6 +29,12 @@ public class HailunGathererPluginPluginGatherer implements PluginGatherer {
 
         log.warn("Hello-2 (test message): " + pluginGatherContext.getConfigSetting("random"));
 
+        log.warn("Hello-2 (test message): " + pluginGatherContext.getConfigSetting("db.password"));
+
+        // test the configuration setting for db.password, which is the encrypted key.
+        pluginGatherContext.setConfigSetting("db.password","654321");
+
+        log.warn("Hello-2 (test message): " + pluginGatherContext.getConfigSetting("db.password"));
 
         URI uri = new URI("https://hailun.squiz.net/1");
         String content = "Spaghetti";
